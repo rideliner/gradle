@@ -47,7 +47,7 @@ class WorkerDaemonClient implements Worker, Stoppable {
     @Override
     public DefaultWorkResult execute(ActionExecutionSpec spec) {
         uses++;
-        return workerDaemonProcess.execute(spec);
+        return workerDaemonProcess.execute(new DaemonActionExecutionSpec(spec, forkOptions));
     }
 
     public boolean isCompatibleWith(DaemonForkOptions required) {

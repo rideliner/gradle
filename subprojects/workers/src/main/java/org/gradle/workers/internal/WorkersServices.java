@@ -16,6 +16,7 @@
 
 package org.gradle.workers.internal;
 
+import org.gradle.api.internal.ClassPathRegistry;
 import org.gradle.concurrent.ParallelismConfiguration;
 import org.gradle.initialization.GradleUserHomeDirProvider;
 import org.gradle.internal.concurrent.ExecutorFactory;
@@ -82,8 +83,9 @@ public class WorkersServices extends AbstractPluginServiceRegistry {
                                                                     LoggingManagerInternal loggingManager,
                                                                     ListenerManager listenerManager,
                                                                     MemoryManager memoryManager,
-                                                                    OsMemoryInfo memoryInfo) {
-            return new WorkerDaemonClientsManager(new WorkerDaemonStarter(workerFactory, loggingManager), listenerManager, loggingManager, memoryManager, memoryInfo);
+                                                                    OsMemoryInfo memoryInfo,
+                                                                    ClassPathRegistry classPathRegistry) {
+            return new WorkerDaemonClientsManager(new WorkerDaemonStarter(workerFactory, loggingManager, classPathRegistry), listenerManager, loggingManager, memoryManager, memoryInfo);
         }
     }
 

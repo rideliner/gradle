@@ -17,6 +17,7 @@
 package org.gradle.workers.internal
 
 import org.gradle.api.internal.file.TestFiles
+import org.gradle.internal.classloader.VisitableURLClassLoader
 import org.gradle.internal.operations.BuildOperationExecutor
 import org.gradle.internal.work.AsyncWorkTracker
 import org.gradle.internal.work.ConditionalExecution
@@ -126,7 +127,19 @@ class DefaultWorkerExecutorTest extends Specification {
         DaemonForkOptions daemonForkOptions = workerExecutor.getDaemonForkOptions(runnable.class, configuration)
 
         then:
-        daemonForkOptions.classpath.contains(foo)
+        def containsFoo = {
+            if (it.spec instanceof VisitableURLClassLoader.Spec) {
+                if (it.spec.classpath.any { url -> url.equals(foo.toURI().toURL())}) {
+                    return true
+                }
+            }
+            if (it.parent != null) {
+                return call(it.parent)
+            } else {
+                return false
+            }
+        }
+        containsFoo(daemonForkOptions.classLoaderStructure)
     }
 
     def "executor executes a given runnable in a daemon"() {

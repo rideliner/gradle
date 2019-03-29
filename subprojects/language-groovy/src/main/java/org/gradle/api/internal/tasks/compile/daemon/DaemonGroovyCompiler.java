@@ -91,8 +91,6 @@ public class DaemonGroovyCompiler extends AbstractDaemonCompiler<GroovyJavaJoint
 
         return new DaemonForkOptionsBuilder(forkOptionsFactory)
             .javaForkOptions(javaForkOptions)
-            .classpath(classpath)
-            .sharedPackages(SHARED_PACKAGES)
             .keepAliveMode(KeepAliveMode.SESSION)
             .withClassLoaderStrucuture(classLoaderStructure)
             .build();

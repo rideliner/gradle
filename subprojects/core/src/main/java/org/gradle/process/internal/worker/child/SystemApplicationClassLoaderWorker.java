@@ -17,15 +17,32 @@
 package org.gradle.process.internal.worker.child;
 
 import org.gradle.api.Action;
+import org.gradle.api.internal.ClassPathRegistry;
+import org.gradle.api.internal.DefaultClassPathProvider;
+import org.gradle.api.internal.DefaultClassPathRegistry;
+import org.gradle.api.internal.DynamicModulesClassPathProvider;
+import org.gradle.api.internal.classpath.DefaultModuleRegistry;
+import org.gradle.api.internal.classpath.DefaultPluginModuleRegistry;
+import org.gradle.api.internal.classpath.ModuleRegistry;
+import org.gradle.api.internal.classpath.PluginModuleRegistry;
 import org.gradle.api.logging.LogLevel;
+import org.gradle.initialization.ClassLoaderRegistry;
+import org.gradle.initialization.DefaultClassLoaderRegistry;
+import org.gradle.initialization.DefaultLegacyTypesSupport;
+import org.gradle.initialization.FlatClassLoaderRegistry;
 import org.gradle.initialization.GradleUserHomeDirProvider;
+import org.gradle.initialization.LegacyTypesSupport;
 import org.gradle.internal.UncheckedException;
+import org.gradle.internal.classpath.ClassPath;
 import org.gradle.internal.concurrent.ExecutorFactory;
 import org.gradle.internal.event.DefaultListenerManager;
 import org.gradle.internal.event.ListenerManager;
+import org.gradle.internal.installation.CurrentGradleInstallation;
+import org.gradle.internal.installation.GradleRuntimeShadedJarDetector;
 import org.gradle.internal.io.ClassLoaderObjectInputStream;
 import org.gradle.internal.logging.LoggingManagerInternal;
 import org.gradle.internal.logging.services.LoggingServiceRegistry;
+import org.gradle.internal.reflect.DirectInstantiator;
 import org.gradle.internal.remote.MessagingClient;
 import org.gradle.internal.remote.ObjectConnection;
 import org.gradle.internal.remote.internal.inet.MultiChoiceAddress;
@@ -247,5 +264,38 @@ public class SystemApplicationClassLoaderWorker implements Callable<Void> {
         WorkerDirectoryProvider createWorkerDirectoryProvider(GradleUserHomeDirProvider gradleUserHomeDirProvider) {
             return new DefaultWorkerDirectoryProvider(gradleUserHomeDirProvider);
         }
+
+        ClassLoaderRegistry createClassLoaderRegistry(ClassPathRegistry classPathRegistry, LegacyTypesSupport legacyTypesSupport) {
+            if (GradleRuntimeShadedJarDetector.isLoadedFrom(getClass())) {
+                return new FlatClassLoaderRegistry(getClass().getClassLoader());
+            }
+
+            // Use DirectInstantiator here to avoid setting up the instantiation infrastructure early
+            return new DefaultClassLoaderRegistry(classPathRegistry, legacyTypesSupport, DirectInstantiator.INSTANCE);
+        }
+
+        LegacyTypesSupport createLegacyTypesSupport() {
+            return new DefaultLegacyTypesSupport();
+        }
+
+        ClassPathRegistry createClassPathRegistry(ModuleRegistry moduleRegistry, PluginModuleRegistry pluginModuleRegistry) {
+            return new DefaultClassPathRegistry(
+                    new DefaultClassPathProvider(moduleRegistry),
+                    new DynamicModulesClassPathProvider(moduleRegistry,
+                            pluginModuleRegistry));
+        }
+
+        DefaultModuleRegistry createModuleRegistry(CurrentGradleInstallation currentGradleInstallation) {
+            return new DefaultModuleRegistry(ClassPath.EMPTY, currentGradleInstallation.getInstallation());
+        }
+
+        CurrentGradleInstallation createCurrentGradleInstallation() {
+            return CurrentGradleInstallation.locate();
+        }
+
+        PluginModuleRegistry createPluginModuleRegistry(ModuleRegistry moduleRegistry) {
+            return new DefaultPluginModuleRegistry(moduleRegistry);
+        }
+
     }
 }

@@ -16,29 +16,37 @@
 
 package org.gradle.workers.internal;
 
-import org.gradle.cache.internal.DefaultCrossBuildInMemoryCacheFactory;
-import org.gradle.internal.event.DefaultListenerManager;
-import org.gradle.internal.instantiation.DefaultInstantiatorFactory;
-import org.gradle.internal.instantiation.InjectAnnotationHandler;
-import org.gradle.internal.instantiation.InstantiatorFactory;
+import org.gradle.initialization.ClassLoaderRegistry;
+import org.gradle.internal.Cast;
 
-import java.util.Collections;
+import javax.inject.Inject;
 
-public class WorkerDaemonServer extends DefaultWorkerServer {
-    // Services for this process. They shouldn't be static, make them injectable instead
-    private static final InstantiatorFactory INSTANTIATOR_FACTORY = new DefaultInstantiatorFactory(new DefaultCrossBuildInMemoryCacheFactory(new DefaultListenerManager()), Collections.<InjectAnnotationHandler>emptyList());
+public class WorkerDaemonServer implements WorkerProtocol {
+    private final ClassLoaderRegistry classLoaderRegistry;
+    private IsolatedClassloaderWorker isolatedClassloaderWorker;
 
-    public WorkerDaemonServer() {
-        super(INSTANTIATOR_FACTORY.inject());
+    @Inject
+    public WorkerDaemonServer(ClassLoaderRegistry classLoaderRegistry) {
+        this.classLoaderRegistry = classLoaderRegistry;
     }
 
     @Override
     public DefaultWorkResult execute(ActionExecutionSpec spec) {
         try {
-            return super.execute(spec);
+            DaemonActionExecutionSpec daemonSpec = Cast.uncheckedCast(spec);
+            IsolatedClassloaderWorker isolatedWorker = getIsolatedClassloaderWorker(daemonSpec.getClassLoaderStructure());
+            return isolatedWorker.execute(daemonSpec);
         } catch (Throwable t) {
             return new DefaultWorkResult(true, t);
         }
+    }
+
+    private IsolatedClassloaderWorker getIsolatedClassloaderWorker(ClassLoaderStructure classLoaderStructure) {
+        // We should be able to reuse the classloader worker as the ClassLoaderStructure should not change in between invocations
+        if (isolatedClassloaderWorker == null) {
+            isolatedClassloaderWorker = new IsolatedClassloaderWorker(classLoaderStructure, classLoaderRegistry.getPluginsClassLoader(), true);
+        }
+        return isolatedClassloaderWorker;
     }
 
     @Override

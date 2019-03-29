@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableSet;
 import org.gradle.api.Action;
 import org.gradle.api.Transformer;
 import org.gradle.internal.classloader.ClasspathUtil;
-import org.gradle.internal.classloader.FilteringClassLoader;
 import org.gradle.internal.exceptions.Contextual;
 import org.gradle.internal.exceptions.DefaultMultiCauseException;
 import org.gradle.internal.operations.BuildOperationExecutor;
@@ -216,14 +215,13 @@ public class DefaultWorkerExecutor implements WorkerExecutor {
             classpathBuilder.addAll(classpath);
         }
 
-        addVisibilityFor(actionClass, classpathBuilder, sharedPackagesBuilder, true);
+        addVisibilityFor(actionClass, classpathBuilder);
 
         for (Class<?> paramClass : paramClasses) {
-            addVisibilityFor(paramClass, classpathBuilder, sharedPackagesBuilder, false);
+            addVisibilityFor(paramClass, classpathBuilder);
         }
 
         Iterable<File> daemonClasspath = classpathBuilder.build();
-        Iterable<String> daemonSharedPackages = sharedPackagesBuilder.build();
 
         JavaForkOptions forkOptions = forkOptionsFactory.newJavaForkOptions();
         userForkOptions.copyTo(forkOptions);
@@ -232,26 +230,13 @@ public class DefaultWorkerExecutor implements WorkerExecutor {
         return new DaemonForkOptionsBuilder(forkOptionsFactory)
             .javaForkOptions(forkOptions)
             .classpath(daemonClasspath)
-            .sharedPackages(daemonSharedPackages)
             .keepAliveMode(KeepAliveMode.DAEMON)
             .build();
     }
 
-    private static void addVisibilityFor(Class<?> visibleClass, ImmutableSet.Builder<File> classpathBuilder, ImmutableSet.Builder<String> sharedPackagesBuilder, boolean addToSharedPackages) {
+    private static void addVisibilityFor(Class<?> visibleClass, ImmutableSet.Builder<File> classpathBuilder) {
         if (visibleClass.getClassLoader() != null) {
             classpathBuilder.addAll(ClasspathUtil.getClasspath(visibleClass.getClassLoader()).getAsFiles());
-        }
-
-        if (addToSharedPackages) {
-            addVisiblePackage(visibleClass, sharedPackagesBuilder);
-        }
-    }
-
-    private static void addVisiblePackage(Class<?> visibleClass, ImmutableSet.Builder<String> sharedPackagesBuilder) {
-        if (visibleClass.getPackage() == null || "".equals(visibleClass.getPackage().getName())) {
-            sharedPackagesBuilder.add(FilteringClassLoader.DEFAULT_PACKAGE);
-        } else {
-            sharedPackagesBuilder.add(visibleClass.getPackage().getName());
         }
     }
 
