@@ -47,7 +47,7 @@ class WorkerDaemonClient implements BuildOperationAwareWorker, Stoppable {
     @Override
     public DefaultWorkResult execute(ActionExecutionSpec spec) {
         uses++;
-        return workerDaemonProcess.execute(new DaemonActionExecutionSpec(spec, forkOptions));
+        return workerDaemonProcess.execute(new WrappedActionExecutionSpec(spec, forkOptions.getClassLoaderStructure()));
     }
 
     public boolean isCompatibleWith(DaemonForkOptions required) {

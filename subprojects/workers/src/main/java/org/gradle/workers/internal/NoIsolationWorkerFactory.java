@@ -21,20 +21,17 @@ import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.internal.operations.BuildOperationRef;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.DefaultServiceRegistry;
-import org.gradle.internal.work.AsyncWorkTracker;
 import org.gradle.workers.IsolationMode;
 import org.gradle.workers.WorkerExecutor;
 
 public class NoIsolationWorkerFactory implements WorkerFactory {
     private final BuildOperationExecutor buildOperationExecutor;
-    private final AsyncWorkTracker workTracker;
     private final InstantiatorFactory instantiatorFactory;
     private Instantiator actionInstantiator;
     private WorkerExecutor workerExecutor;
 
-    public NoIsolationWorkerFactory(BuildOperationExecutor buildOperationExecutor, AsyncWorkTracker workTracker, InstantiatorFactory instantiatorFactory) {
+    public NoIsolationWorkerFactory(BuildOperationExecutor buildOperationExecutor, InstantiatorFactory instantiatorFactory) {
         this.buildOperationExecutor = buildOperationExecutor;
-        this.workTracker = workTracker;
         this.instantiatorFactory = instantiatorFactory;
     }
 
@@ -58,7 +55,9 @@ public class NoIsolationWorkerFactory implements WorkerFactory {
                         DefaultWorkResult result;
                         try {
                             WorkerProtocol workerServer = new DefaultWorkerServer(actionInstantiator);
-                            result = workerServer.execute(spec);
+                            // TODO This should use the isolation framework instead to isolate parameters.
+                            ActionExecutionSpec effectiveSpec = new WrappedActionExecutionSpec(spec, null).unwrap(spec.getImplementationClass().getClassLoader());
+                            result = workerServer.execute(effectiveSpec);
                         } finally {
                             //TODO the async work tracker should wait for children of an operation to finish first.
                             //It should not be necessary to call it here.

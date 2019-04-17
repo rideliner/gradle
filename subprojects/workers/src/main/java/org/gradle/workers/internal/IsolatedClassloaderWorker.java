@@ -70,8 +70,8 @@ public class IsolatedClassloaderWorker implements Worker {
         try {
             Thread.currentThread().setContextClassLoader(workerClassLoader);
             ActionExecutionSpec effectiveSpec = spec;
-            if (spec instanceof DaemonActionExecutionSpec) {
-                effectiveSpec = ((DaemonActionExecutionSpec)spec).getDelegate(workerClassLoader);
+            if (spec instanceof WrappedActionExecutionSpec) {
+                effectiveSpec = ((WrappedActionExecutionSpec)spec).unwrap(workerClassLoader);
             }
             Callable<?> worker = transferWorkerIntoWorkerClassloader(effectiveSpec, workerClassLoader);
             Object result = worker.call();
@@ -139,9 +139,19 @@ public class IsolatedClassloaderWorker implements Worker {
     }
 
     private Callable<?> transferWorkerIntoWorkerClassloader(ActionExecutionSpec spec, ClassLoader workerClassLoader) throws IOException, ClassNotFoundException {
-        byte[] serializedWorker = GUtil.serialize(new WorkerCallable(spec));
-        ObjectInputStream ois = new ClassLoaderObjectInputStream(new ByteArrayInputStream(serializedWorker), workerClassLoader);
-        return (Callable<?>) ois.readObject();
+        byte[] serializedWorker;
+        try {
+           serializedWorker = GUtil.serialize(new WorkerCallable(spec));
+        } catch (Exception e) {
+            throw new WorkSerializationException("Could not serialize unit of work", e);
+        }
+
+        try {
+            ObjectInputStream ois = new ClassLoaderObjectInputStream(new ByteArrayInputStream(serializedWorker), workerClassLoader);
+            return (Callable<?>) ois.readObject();
+        } catch (Exception e) {
+            throw new WorkSerializationException("Could not deserialize unit of work", e);
+        }
     }
 
     private DefaultWorkResult transferResultFromWorkerClassLoader(Object result) throws IOException, ClassNotFoundException {

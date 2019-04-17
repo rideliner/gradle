@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,11 @@
 
 package org.gradle.workers.internal;
 
-import org.gradle.api.Describable;
+import org.gradle.internal.exceptions.Contextual;
 
-import java.io.Serializable;
-
-public interface ActionExecutionSpec extends Serializable, Describable {
-    Class<?> getImplementationClass();
-
-    @Override
-    String getDisplayName();
-
-    Object[] getParams();
+@Contextual
+class WorkSerializationException extends RuntimeException {
+    WorkSerializationException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

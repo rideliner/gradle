@@ -33,7 +33,7 @@ public class WorkerDaemonServer implements WorkerProtocol {
     @Override
     public DefaultWorkResult execute(ActionExecutionSpec spec) {
         try {
-            DaemonActionExecutionSpec daemonSpec = Cast.uncheckedCast(spec);
+            WrappedActionExecutionSpec daemonSpec = Cast.uncheckedCast(spec);
             Worker isolatedWorker = getIsolatedClassloaderWorker(daemonSpec.getClassLoaderStructure());
             return isolatedWorker.execute(daemonSpec);
         } catch (Throwable t) {

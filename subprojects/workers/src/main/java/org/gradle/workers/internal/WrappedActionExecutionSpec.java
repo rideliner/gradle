@@ -16,21 +16,20 @@
 
 package org.gradle.workers.internal;
 
-import org.gradle.internal.UncheckedException;
 import org.gradle.internal.io.ClassLoaderObjectInputStream;
 import org.gradle.util.GUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
 
-public class DaemonActionExecutionSpec implements ActionExecutionSpec {
+public class WrappedActionExecutionSpec implements ActionExecutionSpec {
     private final String displayName;
     private final byte[] delegateBytes;
     private final ClassLoaderStructure classLoaderStructure;
 
-    public DaemonActionExecutionSpec(ActionExecutionSpec delegate, DaemonForkOptions forkOptions) {
-        this.delegateBytes = GUtil.serialize(delegate);
-        this.classLoaderStructure = forkOptions.getClassLoaderStructure();
+    public WrappedActionExecutionSpec(ActionExecutionSpec delegate, ClassLoaderStructure classLoaderStructure) {
+        this.delegateBytes = serialize(delegate);
+        this.classLoaderStructure = classLoaderStructure;
         this.displayName = delegate.getDisplayName();
     }
 
@@ -45,7 +44,7 @@ public class DaemonActionExecutionSpec implements ActionExecutionSpec {
     }
 
     @Override
-    public Object[] getParams(ClassLoader classLoader) {
+    public Object[] getParams() {
         throw new UnsupportedOperationException();
     }
 
@@ -53,13 +52,21 @@ public class DaemonActionExecutionSpec implements ActionExecutionSpec {
         return classLoaderStructure;
     }
 
-    public ActionExecutionSpec getDelegate(ClassLoader classLoader) {
+    private byte[] serialize(ActionExecutionSpec delegate) {
+        try {
+            return GUtil.serialize(delegate);
+        } catch (Exception e) {
+            throw new WorkSerializationException("Could not serialize unit of work", e);
+        }
+    }
+
+    public ActionExecutionSpec unwrap(ClassLoader classLoader) {
         ByteArrayInputStream bis = new ByteArrayInputStream(delegateBytes);
         try {
             ObjectInputStream ois = new ClassLoaderObjectInputStream(bis, classLoader);
             return (ActionExecutionSpec) ois.readObject();
         } catch (Exception e) {
-            throw UncheckedException.throwAsUncheckedException(e);
+            throw new WorkSerializationException("Could not deserialize unit of work", e);
         }
     }
 }
