@@ -47,7 +47,7 @@ public class NoIsolationWorkerFactory implements WorkerFactory {
     }
 
     @Override
-    public Worker getWorker(final DaemonForkOptions forkOptions) {
+    public BuildOperationAwareWorker getWorker(final DaemonForkOptions forkOptions) {
         final WorkerExecutor workerExecutor = this.workerExecutor;
         return new AbstractWorker(buildOperationExecutor) {
             @Override

@@ -100,7 +100,7 @@ public class DefaultWorkerExecutor implements WorkerExecutor {
             public DefaultWorkResult call() throws Exception {
                 try {
                     WorkerFactory workerFactory = getWorkerFactory(isolationMode);
-                    Worker worker = workerFactory.getWorker(daemonForkOptions);
+                    BuildOperationAwareWorker worker = workerFactory.getWorker(daemonForkOptions);
                     return worker.execute(spec, currentBuildOperation);
                 } catch (Throwable t) {
                     throw new WorkExecutionException(spec.getDisplayName(), t);

@@ -45,7 +45,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.concurrent.Callable;
 
-public class IsolatedClassloaderWorker {
+public class IsolatedClassloaderWorker implements Worker {
     private final GroovySystemLoaderFactory groovySystemLoaderFactory = new GroovySystemLoaderFactory();
     private final ClassLoaderStructure classLoaderStructure;
     private final ClassLoader workerInfrastructureClassloader;

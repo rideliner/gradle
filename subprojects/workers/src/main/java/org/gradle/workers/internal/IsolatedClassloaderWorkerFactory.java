@@ -28,7 +28,7 @@ public class IsolatedClassloaderWorkerFactory implements WorkerFactory {
     }
 
     @Override
-    public Worker getWorker(final DaemonForkOptions forkOptions) {
+    public BuildOperationAwareWorker getWorker(final DaemonForkOptions forkOptions) {
         return new AbstractWorker(buildOperationExecutor) {
             @Override
             public DefaultWorkResult execute(ActionExecutionSpec spec, final BuildOperationRef parentBuildOperation) {

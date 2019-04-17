@@ -23,7 +23,7 @@ import javax.inject.Inject;
 
 public class WorkerDaemonServer implements WorkerProtocol {
     private final ClassLoaderRegistry classLoaderRegistry;
-    private IsolatedClassloaderWorker isolatedClassloaderWorker;
+    private Worker isolatedClassloaderWorker;
 
     @Inject
     public WorkerDaemonServer(ClassLoaderRegistry classLoaderRegistry) {
@@ -34,15 +34,15 @@ public class WorkerDaemonServer implements WorkerProtocol {
     public DefaultWorkResult execute(ActionExecutionSpec spec) {
         try {
             DaemonActionExecutionSpec daemonSpec = Cast.uncheckedCast(spec);
-            IsolatedClassloaderWorker isolatedWorker = getIsolatedClassloaderWorker(daemonSpec.getClassLoaderStructure());
+            Worker isolatedWorker = getIsolatedClassloaderWorker(daemonSpec.getClassLoaderStructure());
             return isolatedWorker.execute(daemonSpec);
         } catch (Throwable t) {
             return new DefaultWorkResult(true, t);
         }
     }
 
-    private IsolatedClassloaderWorker getIsolatedClassloaderWorker(ClassLoaderStructure classLoaderStructure) {
-        // We should be able to reuse the classloader worker as the ClassLoaderStructure should not change in between invocations
+    private Worker getIsolatedClassloaderWorker(ClassLoaderStructure classLoaderStructure) {
+        // We can reuse the classloader worker as the ClassLoaderStructure should not change in between invocations
         if (isolatedClassloaderWorker == null) {
             isolatedClassloaderWorker = new IsolatedClassloaderWorker(classLoaderStructure, classLoaderRegistry.getPluginsClassLoader(), true);
         }

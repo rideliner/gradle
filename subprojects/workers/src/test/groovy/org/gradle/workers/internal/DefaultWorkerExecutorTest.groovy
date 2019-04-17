@@ -51,7 +51,7 @@ class DefaultWorkerExecutorTest extends Specification {
     def runnable = Mock(Runnable)
     def executionQueueFactory = Mock(WorkerExecutionQueueFactory)
     def executionQueue = Mock(ConditionalExecutionQueue)
-    def worker = Mock(Worker)
+    def worker = Mock(BuildOperationAwareWorker)
     ConditionalExecution task
     DefaultWorkerExecutor workerExecutor
 
