@@ -22,6 +22,8 @@ import org.gradle.api.internal.tasks.compile.BaseForkOptionsConverter;
 import org.gradle.api.internal.tasks.compile.GroovyJavaJointCompileSpec;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
+import org.gradle.api.tasks.WorkResult;
+import org.gradle.api.tasks.WorkResults;
 import org.gradle.api.tasks.compile.ForkOptions;
 import org.gradle.api.tasks.compile.GroovyForkOptions;
 import org.gradle.internal.classloader.FilteringClassLoader;
@@ -107,6 +109,12 @@ public class DaemonGroovyCompiler extends AbstractDaemonCompiler<GroovyJavaJoint
         gradleFilterSpec.allowPackage("org.gradle.internal.nativeintegration");
         gradleFilterSpec.allowPackage("org.gradle.internal.nativeplatform");
         gradleFilterSpec.allowPackage("net.rubygrapefruit.platform");
+        // Workers
+        gradleFilterSpec.allowPackage("org.gradle.workers");
+        gradleFilterSpec.allowPackage("javax.inject");
+        // WorkResult
+        gradleFilterSpec.allowClass(WorkResults.class);
+        gradleFilterSpec.allowClass(WorkResult.class);
 
         return gradleFilterSpec;
     }
